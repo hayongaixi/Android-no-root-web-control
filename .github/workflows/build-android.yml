@@ -25,6 +25,11 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
 
+    - name: Convert line endings to LF
+      run: |
+        sed -i 's/\r$//' gradlew
+        chmod +x gradlew
+
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
