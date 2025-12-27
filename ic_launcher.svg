@@ -1,0 +1,5 @@
+<!-- Simple launcher icon placeholder -->
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108">
+  <rect width="108" height="108" fill="#6200EE"/>
+  <text x="54" y="70" text-anchor="middle" font-size="48" fill="white">📱</text>
+</svg>
