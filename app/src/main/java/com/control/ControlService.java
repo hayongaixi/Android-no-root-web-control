@@ -79,13 +79,15 @@ public class ControlService extends Service {
         try {
             Log.d(TAG, "Attempting to connect to: " + SERVER_URL);
             IO.Options options = new IO.Options();
-            options.transports = new String[]{"websocket", "polling"};
+            options.transports = new String[]{"websocket"};
             options.reconnection = true;
-            options.reconnectionDelay = 2000;
-            options.reconnectionAttempts = 10;
-            options.timeout = 10000;
+            options.reconnectionDelay = 5000;
+            options.reconnectionDelayMax = 30000;
+            options.randomizationFactor = 0.5;
+            options.reconnectionAttempts = 20;
+            options.timeout = 20000;
             socket = IO.socket(SERVER_URL, options);
-            Log.d(TAG, "Socket object created with WebSocket and polling transports");
+            Log.d(TAG, "Socket object created with WebSocket transport");
             
             socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
                 @Override
