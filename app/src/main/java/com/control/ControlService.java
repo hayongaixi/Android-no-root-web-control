@@ -106,10 +106,10 @@ public class ControlService extends Service {
                 }
             });
             
-            socket.on(Socket.EVENT_ERROR, new Emitter.Listener() {
+            socket.on("error", new Emitter.Listener() {
                 @Override
                 public void call(Object... args) {
-                    Log.e(TAG, "Socket error: " + args[0]);
+                    Log.e(TAG, "Socket error: " + (args.length > 0 ? args[0] : "unknown"));
                 }
             });
             
