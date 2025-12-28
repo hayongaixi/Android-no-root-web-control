@@ -171,19 +171,26 @@ public class ControlService extends Service {
     private void handleCommand(JSONObject commandData) {
         try {
             String action = commandData.getString("action");
-            Log.d(TAG, "Received command: " + action);
+            Log.d(TAG, "========== Received command: " + action + " ==========");
             
             MyAccessibilityService accessibilityService = MyAccessibilityService.getInstance();
             if (accessibilityService == null) {
-                Log.e(TAG, "Accessibility service not available");
+                Log.e(TAG, "========== Accessibility service not available ==========");
+                JSONObject errorResponse = new JSONObject();
+                errorResponse.put("error", "Accessibility service not available");
+                socket.emit("command_result", errorResponse);
                 return;
             }
+            
+            JSONObject response = new JSONObject();
             
             switch (action) {
                 case "click":
                     float x = (float) commandData.getDouble("x");
                     float y = (float) commandData.getDouble("y");
-                    accessibilityService.click(x, y);
+                    boolean clickResult = accessibilityService.click(x, y);
+                    response.put("result", "Click executed: " + clickResult);
+                    Log.d(TAG, "========== Click executed: " + clickResult + " ==========");
                     break;
                     
                 case "swipe":
@@ -192,29 +199,45 @@ public class ControlService extends Service {
                     float x2 = (float) commandData.getDouble("x2");
                     float y2 = (float) commandData.getDouble("y2");
                     int duration = commandData.optInt("duration", 300);
-                    accessibilityService.swipe(x1, y1, x2, y2, duration);
+                    boolean swipeResult = accessibilityService.swipe(x1, y1, x2, y2, duration);
+                    response.put("result", "Swipe executed: " + swipeResult);
+                    Log.d(TAG, "========== Swipe executed: " + swipeResult + " ==========");
                     break;
                     
                 case "longClick":
                     float lx = (float) commandData.getDouble("x");
                     float ly = (float) commandData.getDouble("y");
                     int lduration = commandData.optInt("duration", 1000);
-                    accessibilityService.longClick(lx, ly, lduration);
+                    boolean longClickResult = accessibilityService.longClick(lx, ly, lduration);
+                    response.put("result", "Long click executed: " + longClickResult);
+                    Log.d(TAG, "========== Long click executed: " + longClickResult + " ==========");
                     break;
                     
                 case "getScreen":
+                    Log.d(TAG, "========== Calling getScreenContent ==========");
                     String screenContent = accessibilityService.getScreenContent();
-                    JSONObject response = new JSONObject();
+                    Log.d(TAG, "========== getScreenContent returned: " + (screenContent != null ? screenContent.length() + " chars" : "null"));
                     response.put("result", screenContent);
-                    socket.emit("command_result", response);
                     break;
                     
                 default:
                     Log.w(TAG, "Unknown command: " + action);
+                    response.put("error", "Unknown command: " + action);
             }
             
+            Log.d(TAG, "========== EMITTING command_result: " + response.toString() + " ==========");
+            socket.emit("command_result", response);
+            Log.d(TAG, "========== command_result EMITTED ==========");
+            
         } catch (JSONException e) {
-            Log.e(TAG, "Error handling command: " + e.getMessage());
+            Log.e(TAG, "========== Error handling command: " + e.getMessage() + " ==========");
+            try {
+                JSONObject errorResponse = new JSONObject();
+                errorResponse.put("error", "Error handling command: " + e.getMessage());
+                socket.emit("command_result", errorResponse);
+            } catch (JSONException ex) {
+                Log.e(TAG, "Error sending error response: " + ex.getMessage());
+            }
         }
     }
 }

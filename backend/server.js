@@ -24,49 +24,57 @@ app.use(express.static(path.join(__dirname, 'public')));
 const devices = new Map();
 
 io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id, 'Transport:', socket.conn.transport.name);
+    console.log('Client connected:', socket.id);
     
-    socket.conn.on('upgrade', () => {
-        console.log('Transport upgraded:', socket.id, 'to:', socket.conn.transport.name);
+    // 自动注册设备
+    devices.set(socket.id, {
+        id: socket.id,
+        name: 'Device ' + socket.id.substring(0, 8),
+        lastSeen: new Date(),
+        socket: socket
     });
-    
-    socket.conn.on('error', (err) => {
-        console.log('Transport error:', socket.id, err);
-    });
-    
-    // 记录所有接收的事件
-    const onevent = socket.onevent;
-    socket.onevent = function (packet) {
-        const args = packet.data || [];
-        console.log('Socket event received:', packet.data[0], 'from:', socket.id);
-        onevent.call(this, packet);
-    };
+    console.log('Device auto-registered:', socket.id);
+    broadcastDevices();
     
     socket.on('register_device', (data) => {
-        devices.set(socket.id, {
-            id: socket.id,
-            name: data.name || 'Unknown Device',
-            lastSeen: new Date(),
-            socket: socket
-        });
-        console.log('Device registered:', data.name, 'ID:', socket.id);
-        io.emit('device_list', Array.from(devices.values()));
+        const device = devices.get(socket.id);
+        if (device) {
+            device.name = data.name || device.name;
+        }
+        broadcastDevices();
     });
     
     socket.on('command_result', (data) => {
         console.log('Command result:', data);
+        // 广播给所有Web客户端
+        socket.broadcast.emit('command_result', data);
     });
     
     socket.on('disconnect', (reason) => {
         devices.delete(socket.id);
         console.log('Client disconnected:', socket.id, 'Reason:', reason);
-        io.emit('device_list', Array.from(devices.values()));
+        broadcastDevices();
     });
 });
 
+// 广播设备列表（不包含socket对象避免循环引用）
+function broadcastDevices() {
+    const deviceList = Array.from(devices.values()).map(d => ({
+        id: d.id,
+        name: d.name,
+        lastSeen: d.lastSeen
+    }));
+    io.emit('device_list', deviceList);
+}
+
 // API路由
 app.get('/api/devices', (req, res) => {
-    res.json(Array.from(devices.values()));
+    const deviceList = Array.from(devices.values()).map(d => ({
+        id: d.id,
+        name: d.name,
+        lastSeen: d.lastSeen
+    }));
+    res.json(deviceList);
 });
 
 app.post('/api/command', (req, res) => {
@@ -76,7 +84,7 @@ app.post('/api/command', (req, res) => {
         return res.status(400).json({ error: 'Missing deviceId or command' });
     }
     
-    const device = Array.from(devices.values()).find(d => d.id === deviceId);
+    const device = devices.get(deviceId);
     if (!device) {
         return res.status(404).json({ error: 'Device not found' });
     }
@@ -89,7 +97,7 @@ app.post('/api/command/:deviceId', (req, res) => {
     const { deviceId } = req.params;
     const command = req.body;
     
-    const device = Array.from(devices.values()).find(d => d.id === deviceId);
+    const device = devices.get(deviceId);
     if (!device) {
         return res.status(404).json({ error: 'Device not found' });
     }
