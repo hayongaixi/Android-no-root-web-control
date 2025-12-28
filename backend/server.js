@@ -9,9 +9,11 @@ const app = express();
 const server = http.createServer(app);
 const io = require('socket.io')(server, {
     origins: '*:*',
-    pingTimeout: 120000,
-    pingInterval: 50000,
-    transports: ['websocket', 'polling']
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    transports: ['websocket', 'polling'],
+    upgradeTimeout: 10000,
+    allowUpgrades: true
 });
 
 const PORT = process.env.PORT || 3000;
