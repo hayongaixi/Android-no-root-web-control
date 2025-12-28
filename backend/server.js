@@ -1,17 +1,17 @@
 const express = require('express');
 const http = require('http');
-const { Server } = require('socket.io');
+const socketio = require('socket.io');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-    }
+const io = require('socket.io')(server, {
+    origins: '*:*',
+    pingTimeout: 120000,
+    pingInterval: 50000,
+    transports: ['websocket', 'polling']
 });
 
 const PORT = process.env.PORT || 3000;
@@ -24,7 +24,23 @@ app.use(express.static(path.join(__dirname, 'public')));
 const devices = new Map();
 
 io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
+    console.log('Client connected:', socket.id, 'Transport:', socket.conn.transport.name);
+    
+    socket.conn.on('upgrade', () => {
+        console.log('Transport upgraded:', socket.id, 'to:', socket.conn.transport.name);
+    });
+    
+    socket.conn.on('error', (err) => {
+        console.log('Transport error:', socket.id, err);
+    });
+    
+    // 记录所有接收的事件
+    const onevent = socket.onevent;
+    socket.onevent = function (packet) {
+        const args = packet.data || [];
+        console.log('Socket event received:', packet.data[0], 'from:', socket.id);
+        onevent.call(this, packet);
+    };
     
     socket.on('register_device', (data) => {
         devices.set(socket.id, {
@@ -33,7 +49,7 @@ io.on('connection', (socket) => {
             lastSeen: new Date(),
             socket: socket
         });
-        console.log('Device registered:', data.name);
+        console.log('Device registered:', data.name, 'ID:', socket.id);
         io.emit('device_list', Array.from(devices.values()));
     });
     
@@ -41,9 +57,9 @@ io.on('connection', (socket) => {
         console.log('Command result:', data);
     });
     
-    socket.on('disconnect', () => {
+    socket.on('disconnect', (reason) => {
         devices.delete(socket.id);
-        console.log('Client disconnected:', socket.id);
+        console.log('Client disconnected:', socket.id, 'Reason:', reason);
         io.emit('device_list', Array.from(devices.values()));
     });
 });
@@ -86,6 +102,6 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
 });

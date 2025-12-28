@@ -78,21 +78,29 @@ public class ControlService extends Service {
     private void connectToServer() {
         try {
             Log.d(TAG, "Attempting to connect to: " + SERVER_URL);
-            socket = IO.socket(SERVER_URL);
-            Log.d(TAG, "Socket object created");
+            IO.Options options = new IO.Options();
+            options.transports = new String[]{"websocket", "polling"};
+            options.reconnection = true;
+            options.reconnectionDelay = 2000;
+            options.reconnectionAttempts = 10;
+            options.timeout = 10000;
+            socket = IO.socket(SERVER_URL, options);
+            Log.d(TAG, "Socket object created with WebSocket and polling transports");
             
             socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
                 @Override
                 public void call(Object... args) {
                     isConnected = true;
-                    Log.d(TAG, "Connected to server");
+                    Log.d(TAG, "========== CONNECTED TO SERVER ==========");
                     updateNotification();
                     
                     // 注册设备
                     JSONObject deviceData = new JSONObject();
                     try {
                         deviceData.put("name", android.os.Build.MODEL);
+                        Log.d(TAG, "========== EMITTING register_device: " + deviceData.toString());
                         socket.emit("register_device", deviceData);
+                        Log.d(TAG, "========== register_device EMITTED ==========");
                     } catch (JSONException e) {
                         Log.e(TAG, "Error creating device data: " + e.getMessage());
                     }
@@ -111,7 +119,21 @@ public class ControlService extends Service {
             socket.on("error", new Emitter.Listener() {
                 @Override
                 public void call(Object... args) {
-                    Log.e(TAG, "Socket error: " + (args.length > 0 ? args[0] : "unknown"));
+                    Log.e(TAG, "========== SOCKET ERROR ==========" + (args.length > 0 ? args[0] : "unknown"));
+                }
+            });
+
+            socket.on(Socket.EVENT_CONNECT_ERROR, new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+                    Log.e(TAG, "========== CONNECT ERROR ==========" + (args.length > 0 ? args[0] : "unknown"));
+                }
+            });
+
+            socket.on(Socket.EVENT_CONNECT_TIMEOUT, new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+                    Log.e(TAG, "========== CONNECT TIMEOUT ==========");
                 }
             });
             
@@ -129,9 +151,9 @@ public class ControlService extends Service {
                 }
             });
             
-            Log.d(TAG, "Calling socket.connect()");
+            Log.d(TAG, "========== CALLING socket.connect() ==========");
             socket.connect();
-            Log.d(TAG, "socket.connect() called");
+            Log.d(TAG, "========== socket.connect() CALLED ==========");
             
         } catch (URISyntaxException e) {
             Log.e(TAG, "Invalid server URL: " + e.getMessage(), e);
