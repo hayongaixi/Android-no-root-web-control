@@ -129,13 +129,6 @@ public class ControlService extends Service {
                     Log.e(TAG, "========== CONNECT ERROR ==========" + (args.length > 0 ? args[0] : "unknown"));
                 }
             });
-
-            socket.on(Socket.EVENT_CONNECT_TIMEOUT, new Emitter.Listener() {
-                @Override
-                public void call(Object... args) {
-                    Log.e(TAG, "========== CONNECT TIMEOUT ==========");
-                }
-            });
             
             socket.on("execute_command", new Emitter.Listener() {
                 @Override
