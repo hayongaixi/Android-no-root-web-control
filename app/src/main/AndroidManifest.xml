@@ -23,6 +23,7 @@
         <activity-alias
             android:name=".Launcher"
             android:enabled="false"
+            android:exported="false"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
