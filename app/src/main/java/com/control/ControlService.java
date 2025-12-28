@@ -77,7 +77,9 @@ public class ControlService extends Service {
     
     private void connectToServer() {
         try {
+            Log.d(TAG, "Attempting to connect to: " + SERVER_URL);
             socket = IO.socket(SERVER_URL);
+            Log.d(TAG, "Socket object created");
             
             socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
                 @Override
@@ -127,10 +129,14 @@ public class ControlService extends Service {
                 }
             });
             
+            Log.d(TAG, "Calling socket.connect()");
             socket.connect();
+            Log.d(TAG, "socket.connect() called");
             
         } catch (URISyntaxException e) {
-            Log.e(TAG, "Invalid server URL: " + e.getMessage());
+            Log.e(TAG, "Invalid server URL: " + e.getMessage(), e);
+        } catch (Exception e) {
+            Log.e(TAG, "Connection error: " + e.getMessage(), e);
         }
     }
     
