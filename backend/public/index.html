@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -370,3 +371,377 @@
     </script>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android远程控制面板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .device-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .device-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .device-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .device-card.active {
+            border-color: #667eea;
+            background: #f5f5ff;
+        }
+        
+        .device-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .device-status {
+            color: #4caf50;
+            font-size: 14px;
+        }
+        
+        .control-area {
+            display: none;
+        }
+        
+        .control-area.active {
+            display: block;
+        }
+        
+        .control-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .input-group input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        
+        .coordinate-input {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .log-area {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .back-btn {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Android远程控制面板</h1>
+        
+        <!-- 设备列表 -->
+        <div class="panel" id="deviceListPanel">
+            <h2 style="margin-bottom: 20px; color: #333;">在线设备</h2>
+            <div class="device-list" id="deviceList">
+                <p style="color: #666;">等待设备连接...</p>
+            </div>
+        </div>
+        
+        <!-- 控制面板 -->
+        <div class="panel control-area" id="controlPanel">
+            <button class="btn btn-primary back-btn" onclick="showDeviceList()">← 返回设备列表</button>
+            <h2 id="selectedDeviceName" style="margin-bottom: 20px; color: #333;">设备控制</h2>
+            
+            <div class="control-buttons">
+                <button class="btn btn-primary" onclick="clickScreen()">点击</button>
+                <button class="btn btn-primary" onclick="showSwipeInput()">滑动</button>
+                <button class="btn btn-primary" onclick="longClick()">长按</button>
+                <button class="btn btn-success" onclick="getScreen()">获取屏幕</button>
+            </div>
+            
+            <div id="coordinateInput" style="display: none; margin-bottom: 20px;">
+                <h3 style="margin-bottom: 10px; color: #555;">点击坐标</h3>
+                <div class="coordinate-input">
+                    <div class="input-group">
+                        <label>X坐标</label>
+                        <input type="number" id="clickX" placeholder="例如: 500">
+                    </div>
+                    <div class="input-group">
+                        <label>Y坐标</label>
+                        <input type="number" id="clickY" placeholder="例如: 1000">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="executeClick()">执行点击</button>
+            </div>
+            
+            <div id="swipeInput" style="display: none; margin-bottom: 20px;">
+                <h3 style="margin-bottom: 10px; color: #555;">滑动参数</h3>
+                <div class="coordinate-input" style="grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div class="input-group">
+                        <label>起始X</label>
+                        <input type="number" id="swipeX1" placeholder="例如: 500">
+                    </div>
+                    <div class="input-group">
+                        <label>起始Y</label>
+                        <input type="number" id="swipeY1" placeholder="例如: 1500">
+                    </div>
+                    <div class="input-group">
+                        <label>结束X</label>
+                        <input type="number" id="swipeX2" placeholder="例如: 500">
+                    </div>
+                    <div class="input-group">
+                        <label>结束Y</label>
+                        <input type="number" id="swipeY2" placeholder="例如: 500">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>滑动时长(毫秒)</label>
+                    <input type="number" id="swipeDuration" value="300">
+                </div>
+                <button class="btn btn-primary" onclick="executeSwipe()">执行滑动</button>
+            </div>
+            
+            <div class="log-area" id="logArea">
+                <div>等待操作...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let selectedDeviceId = null;
+        
+        // 接收设备列表更新
+        socket.on('device_list', (devices) => {
+            renderDeviceList(devices);
+        });
+        
+        // 渲染设备列表
+        function renderDeviceList(devices) {
+            const deviceList = document.getElementById('deviceList');
+            if (devices.length === 0) {
+                deviceList.innerHTML = '<p style="color: #666;">等待设备连接...</p>';
+                return;
+            }
+            
+            deviceList.innerHTML = devices.map(device => `
+                <div class="device-card" onclick="selectDevice('${device.id}', '${device.name}')">
+                    <div class="device-name">${device.name}</div>
+                    <div class="device-status">● 在线</div>
+                </div>
+            `).join('');
+        }
+        
+        // 选择设备
+        function selectDevice(deviceId, deviceName) {
+            selectedDeviceId = deviceId;
+            document.getElementById('selectedDeviceName').textContent = `控制: ${deviceName}`;
+            document.getElementById('deviceListPanel').style.display = 'none';
+            document.getElementById('controlPanel').classList.add('active');
+            addLog(`已选择设备: ${deviceName}`);
+        }
+        
+        // 返回设备列表
+        function showDeviceList() {
+            document.getElementById('deviceListPanel').style.display = 'block';
+            document.getElementById('controlPanel').classList.remove('active');
+            document.getElementById('coordinateInput').style.display = 'none';
+            document.getElementById('swipeInput').style.display = 'none';
+        }
+        
+        // 点击屏幕
+        function clickScreen() {
+            document.getElementById('coordinateInput').style.display = 'block';
+            document.getElementById('swipeInput').style.display = 'none';
+        }
+        
+        // 显示滑动输入
+        function showSwipeInput() {
+            document.getElementById('swipeInput').style.display = 'block';
+            document.getElementById('coordinateInput').style.display = 'none';
+        }
+        
+        // 执行点击
+        function executeClick() {
+            const x = document.getElementById('clickX').value;
+            const y = document.getElementById('clickY').value;
+            
+            if (!x || !y) {
+                alert('请输入坐标');
+                return;
+            }
+            
+            sendCommand({ action: 'click', x: parseFloat(x), y: parseFloat(y) });
+            addLog(`点击坐标: (${x}, ${y})`);
+        }
+        
+        // 执行滑动
+        function executeSwipe() {
+            const x1 = document.getElementById('swipeX1').value;
+            const y1 = document.getElementById('swipeY1').value;
+            const x2 = document.getElementById('swipeX2').value;
+            const y2 = document.getElementById('swipeY2').value;
+            const duration = document.getElementById('swipeDuration').value || 300;
+            
+            if (!x1 || !y1 || !x2 || !y2) {
+                alert('请输入滑动坐标');
+                return;
+            }
+            
+            sendCommand({
+                action: 'swipe',
+                x1: parseFloat(x1),
+                y1: parseFloat(y1),
+                x2: parseFloat(x2),
+                y2: parseFloat(y2),
+                duration: parseInt(duration)
+            });
+            addLog(`滑动: (${x1}, ${y1}) → (${x2}, ${y2}), 时长: ${duration}ms`);
+        }
+        
+        // 长按
+        function longClick() {
+            const x = prompt('输入X坐标:');
+            const y = prompt('输入Y坐标:');
+            const duration = prompt('输入长按时长(毫秒):', '1000');
+            
+            if (x && y) {
+                sendCommand({
+                    action: 'longClick',
+                    x: parseFloat(x),
+                    y: parseFloat(y),
+                    duration: parseInt(duration)
+                });
+                addLog(`长按坐标: (${x}, ${y}), 时长: ${duration}ms`);
+            }
+        }
+        
+        // 获取屏幕
+        function getScreen() {
+            sendCommand({ action: 'getScreen' });
+            addLog('获取屏幕内容...');
+        }
+        
+        // 发送命令
+        function sendCommand(command) {
+            socket.emit('execute_command', { deviceId: selectedDeviceId, command });
+        }
+        
+        // 添加日志
+        function addLog(message) {
+            const logArea = document.getElementById('logArea');
+            const time = new Date().toLocaleTimeString();
+            logArea.innerHTML += `<div>[${time}] ${message}</div>`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+    </script>
+</body>
+</html>
+>>>>>>> 352a9af7aaa9a9aa35dc5091be9f0a7961e36bb5
